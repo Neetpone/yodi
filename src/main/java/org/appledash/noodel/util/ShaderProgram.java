@@ -1,5 +1,6 @@
 package org.appledash.noodel.util;
 
+import lombok.Getter;
 import org.appledash.noodel.render.VertexFormat;
 import org.jetbrains.annotations.NotNull;
 
@@ -7,6 +8,7 @@ import static org.lwjgl.opengl.GL20.*;
 
 public final class ShaderProgram {
     private final int programId;
+    @Getter
     private final VertexFormat vertexFormat;
 
     private ShaderProgram(String vertexCode, String fragmentCode, VertexFormat vertexFormat) {
@@ -60,6 +62,14 @@ public final class ShaderProgram {
         glUseProgram(this.programId);
     }
 
+    public void uploadStandardUniforms() {
+        int colorLocation = this.getUniformLocation("Color");
+
+        if (colorLocation != -1) {
+            glUniform4fv(colorLocation, RenderState.getColor());
+        }
+    }
+
     public void delete() {
         glDeleteShader(this.programId);
     }
@@ -92,10 +102,7 @@ public final class ShaderProgram {
         }
     }
 
-    public VertexFormat getVertexFormat() {
-        return vertexFormat;
-    }
-
+    @Getter
     public static final class CompilationException extends RuntimeException {
         private final int status;
         private final String infoLog;
@@ -106,12 +113,5 @@ public final class ShaderProgram {
             this.infoLog = infoLog;
         }
 
-        public int getStatus() {
-            return this.status;
-        }
-
-        public String getInfoLog() {
-            return this.infoLog;
-        }
     }
 }

@@ -1,5 +1,6 @@
 package org.appledash.noodel.texture;
 
+import lombok.Getter;
 import org.appledash.noodel.util.ResourceHelper;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +13,9 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class Texture2D {
     private final int textureId;
+    @Getter
     private final int width;
+    @Getter
     private final int height;
     private final @NotNull ByteBuffer buffer;
 
@@ -48,14 +51,6 @@ public class Texture2D {
 
     public void delete() {
         glDeleteTextures(this.textureId);
-    }
-
-    public int getWidth() {
-        return this.width;
-    }
-
-    public int getHeight() {
-        return this.height;
     }
 
     @Contract("_ -> new")

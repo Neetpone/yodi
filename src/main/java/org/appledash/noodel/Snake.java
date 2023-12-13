@@ -1,5 +1,6 @@
 package org.appledash.noodel;
 
+import lombok.Getter;
 import org.appledash.noodel.util.Vec2;
 
 import java.util.LinkedList;
@@ -8,6 +9,7 @@ public class Snake {
     public Direction direction = Direction.RIGHT;
     public Direction prevDirection = this.direction;
 
+    @Getter
     private final LinkedList<Vec2> path = new LinkedList<>();
 
     public Snake(Vec2 position) {
@@ -34,10 +36,6 @@ public class Snake {
 
     public void setDirection(Direction direction) {
         this.direction = direction;
-    }
-
-    public LinkedList<Vec2> getPath() {
-        return this.path;
     }
 
     public Vec2 getHeadPos() {

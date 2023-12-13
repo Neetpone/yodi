@@ -1,5 +1,6 @@
 package org.appledash.noodel;
 
+import org.appledash.noodel.render.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.render.VertexFormat;
 import org.appledash.noodel.texture.SpriteSheet;
@@ -7,7 +8,7 @@ import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
 import org.appledash.noodel.util.FrameCounter;
 import org.appledash.noodel.util.Mth;
-import org.appledash.noodel.util.ShaderProgram;
+import org.appledash.noodel.util.RenderState;
 import org.appledash.noodel.util.Vec2;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
@@ -20,7 +21,6 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.glUniform1i;
-import static org.lwjgl.opengl.GL20.glUniform4f;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
@@ -43,7 +43,6 @@ public final class NoodelMain {
 
     private GameWindow window;
     private Texture2D gameOverTexture;
-    private ShaderProgram positionTextureShader;
 
     private boolean paused;
     private boolean gameOver;
@@ -69,11 +68,10 @@ public final class NoodelMain {
         glBindVertexArray(glGenVertexArrays());
 
         this.spriteSheet = new SpriteSheet(Texture2D.fromResource("textures/terrain.png"), 16, 16);
-        this.positionTextureShader = ShaderProgram.loadFromResources("shaders/2dtexture", VertexFormat.POSITION_TEXTURE_2D);
         this.gameOverTexture = Texture2D.fromResource("textures/game_over.png");
         this.world.reset();
 
-        glUniform1i(this.positionTextureShader.getUniformLocation("textureSampler"), 0);
+        glUniform1i(RenderUtil.POSITION_TEXTURE.getUniformLocation("textureSampler"), 0);
     }
 
     private void mainLoop() {
@@ -100,22 +98,10 @@ public final class NoodelMain {
             glActiveTexture(GL_TEXTURE0);
 
             if (this.gameOver) {
-                this.gameOverTexture.bind();
-                tess.begin(VertexFormat.POSITION_TEXTURE_2D);
-                tess.vertex(0, 0).texture(0, 1).next();
-                tess.vertex(SCALED_WIDTH, 0).texture(1, 1).next();
-                tess.vertex(0, SCALED_HEIGHT).texture(0, 0).next();
-
-                tess.vertex(0, SCALED_HEIGHT).texture(0, 0).next();
-                tess.vertex(SCALED_WIDTH, 0).texture(1, 1).next();
-                tess.vertex(SCALED_WIDTH, SCALED_HEIGHT).texture(1, 0).next();
-
-                this.gameOverTexture.bind();
-                tess.draw(this.positionTextureShader);
-                tess.reset();
+                RenderUtil.drawTexture2D(tess, this.gameOverTexture, 0, 0, SCALED_WIDTH, SCALED_HEIGHT);
             } else {
                 tess.begin(VertexFormat.POSITION_TEXTURE_2D);
-                this.positionTextureShader.use();
+
                 // Top and bottom border
                 for (int x = 0; x < TILES_X; x++) {
                     this.drawTile(tess, x, 0, Terrain.GRASS);
@@ -129,9 +115,9 @@ public final class NoodelMain {
                 }
 
                 // Set the color for the border and render the border
-                glUniform4f(this.positionTextureShader.getUniformLocation("Color"), 158 / 255F, 203 / 255F, 145 / 255F, 1.0F);
+                RenderState.color(158, 203, 145, 255); // This is a nice green
                 this.spriteSheet.getTexture().bind();
-                tess.draw(this.positionTextureShader);
+                tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
 
                 tess.begin(VertexFormat.POSITION_TEXTURE_2D);
 
@@ -139,8 +125,8 @@ public final class NoodelMain {
                 this.drawYoditax(tess, this.world.getSnake());
 
                 // Set the color back to normal
-                glUniform4f(this.positionTextureShader.getUniformLocation("Color"), 1.0F, 1.0F, 1.0F, 1.0F);
-                tess.draw(this.positionTextureShader);
+                RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
+                tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
             }
 
             glfwSwapBuffers(this.window.getWindowId());
@@ -149,7 +135,7 @@ public final class NoodelMain {
             this.frameCounter.update(System.currentTimeMillis() - frameStart);
         }
 
-        this.positionTextureShader.delete();
+        // this.positionTextureShader.delete();
         this.gameOverTexture.delete();
     }
 
@@ -260,6 +246,7 @@ public final class NoodelMain {
         float tH = this.spriteSheet.getTexture().getHeight();
         float sH = this.spriteSheet.getSpriteHeight();
 
+        // Draw as two triangles
         tess.vertex(x, y).texture(u / tW, (v + sH) / tH).next();
         tess.vertex(x + TILE_SIZE, y).texture((u + sW) / tW, (v + sH) / tH).next();
         tess.vertex(x, y + TILE_SIZE).texture(u / tW, v / tH).next();
@@ -330,11 +317,4 @@ public final class NoodelMain {
     private static void alertError(String title, String message) {
         JOptionPane.showMessageDialog(null, message, title, JOptionPane.ERROR_MESSAGE);
     }
-
-    private static void alertInfo(String title, String message) {
-        JOptionPane.showMessageDialog(null, message, title, JOptionPane.INFORMATION_MESSAGE);
-        System.out.println(title + " - " + message);
-    }
-
-
 }

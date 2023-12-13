@@ -1,10 +1,13 @@
 package org.appledash.noodel.util;
 
+import lombok.Getter;
+
 public class FrameCounter {
     private static final long WINDOW = 10;
 
     private int updateCount;
     private long runningTotal;
+    @Getter
     private int averageFrameTime = -1;
 
     public void update(long lastFrameTime) {
@@ -16,10 +19,6 @@ public class FrameCounter {
             this.updateCount = 0;
             this.runningTotal = 0;
         }
-    }
-
-    public int getAverageFrameTime() {
-        return this.averageFrameTime;
     }
 
     public int getAverageFPS() {

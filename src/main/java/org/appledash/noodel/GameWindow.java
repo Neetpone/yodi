@@ -1,5 +1,6 @@
 package org.appledash.noodel;
 
+import lombok.Getter;
 import org.lwjgl.glfw.GLFWKeyCallbackI;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallbackI;
@@ -12,6 +13,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class GameWindow {
+    @Getter
     private final long windowId;
 
     public GameWindow(int width, int height) {
@@ -66,9 +68,5 @@ public class GameWindow {
 
     public void setShouldClose(boolean shouldClose) {
         glfwSetWindowShouldClose(this.windowId, shouldClose);
-    }
-
-    public long getWindowId() {
-        return windowId;
     }
 }

@@ -1,5 +1,6 @@
 package org.appledash.noodel;
 
+import lombok.Getter;
 import org.appledash.noodel.util.Vec2;
 
 import java.util.*;
@@ -12,8 +13,8 @@ public class World {
     private final Set<Vec2> apples = new HashSet<>();
 
     private boolean wantReset;
+    @Getter
     private Snake snake;
-
 
     public World(int tilesX, int tilesY) {
         this.tilesX = tilesX;
@@ -71,10 +72,6 @@ public class World {
 
     public Set<Vec2> getApples() {
         return Collections.unmodifiableSet(this.apples);
-    }
-
-    public Snake getSnake() {
-        return this.snake;
     }
 
     public boolean wantsReset() {

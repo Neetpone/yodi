@@ -1,11 +1,16 @@
 package org.appledash.noodel.texture;
 
+import lombok.Getter;
+
 import java.awt.image.BufferedImage;
 
 public class SpriteSheet {
+    @Getter
     private final Texture2D texture;
     private final boolean textureOwned; /* if true, we made the Texture2D and we need to delete it. */
+    @Getter
     private final int spriteWidth;
+    @Getter
     private final int spriteHeight;
     private final int xCount;
     private final int yCount;
@@ -17,7 +22,6 @@ public class SpriteSheet {
     public SpriteSheet(Texture2D texture, int spriteWidth, int spriteHeight) {
         this(texture, false, spriteWidth, spriteHeight);
     }
-
 
     private SpriteSheet(Texture2D texture, boolean textureOwned, int spriteWidth, int spriteHeight) {
         this.texture = texture;
@@ -34,18 +38,6 @@ public class SpriteSheet {
         int col = spriteIndex / this.yCount;
 
         return ((row * this.spriteWidth) << Short.SIZE) | (col * this.spriteHeight);
-    }
-
-    public Texture2D getTexture() {
-        return this.texture;
-    }
-
-    public int getSpriteWidth() {
-        return this.spriteWidth;
-    }
-
-    public int getSpriteHeight() {
-        return this.spriteHeight;
     }
 
     public void delete() {
