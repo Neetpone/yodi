@@ -1,6 +1,6 @@
 #version 330 core
 
-// uniform vec3 color;
+uniform vec4 Color;
 
 layout(location = 0) in vec2 vertexPosition_screenSpace;
 layout(location = 1) in vec2 vertexUV;

@@ -8,7 +8,6 @@ import static org.lwjgl.opengl.GL20.*;
 public final class ShaderProgram {
     private final int programId;
     private final VertexFormat vertexFormat;
-    private final int[] buffers;
 
     private ShaderProgram(String vertexCode, String fragmentCode, VertexFormat vertexFormat) {
         int vertexId = glCreateShader(GL_VERTEX_SHADER);
@@ -51,9 +50,6 @@ public final class ShaderProgram {
         glDeleteShader(fragmentId);
 
         this.vertexFormat = vertexFormat;
-        this.buffers = new int[vertexFormat.attributeSizes.length];
-
-        glGenBuffers(this.buffers);
     }
 
     public int getUniformLocation(String name) {
@@ -65,7 +61,6 @@ public final class ShaderProgram {
     }
 
     public void delete() {
-        glDeleteBuffers(this.buffers);
         glDeleteShader(this.programId);
     }
 
@@ -99,10 +94,6 @@ public final class ShaderProgram {
 
     public VertexFormat getVertexFormat() {
         return vertexFormat;
-    }
-
-    public int[] getBuffers() {
-        return buffers;
     }
 
     public static final class CompilationException extends RuntimeException {

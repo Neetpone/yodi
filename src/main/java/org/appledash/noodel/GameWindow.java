@@ -19,7 +19,7 @@ public class GameWindow {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-        this.windowId = glfwCreateWindow(width, height, "Noodell", NULL, NULL);
+        this.windowId = glfwCreateWindow(width, height, "Yodi: The Game", NULL, NULL);
 
         if (this.windowId == NULL) {
             throw new IllegalStateException("Failed to create window");
