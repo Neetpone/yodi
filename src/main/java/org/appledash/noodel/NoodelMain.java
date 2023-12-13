@@ -73,7 +73,7 @@ public final class NoodelMain {
 
         this.spriteSheet = new SpriteSheet(Texture2D.fromResource("textures/terrain.png"), 16, 16);
         this.gameOverTexture = Texture2D.fromResource("textures/game_over.png");
-        this.fontRenderer = new FontRenderer(new Font("Verdana", Font.PLAIN, 9 * 4));
+        this.fontRenderer = new FontRenderer(new Font("Verdana", Font.PLAIN, 36));
         this.world.reset();
 
         glUniform1i(RenderUtil.POSITION_TEXTURE.getUniformLocation("textureSampler"), 0);
@@ -83,6 +83,7 @@ public final class NoodelMain {
         Tesselator2D tess = Tesselator2D.INSTANCE;
 
         glClearColor(158 / 255F, 203 / 255F, 145 / 255F, 1.0F);
+        RenderState.ortho(0, SCALED_WIDTH, 0, SCALED_HEIGHT, -1, 1);
 
         while (!this.window.shouldClose()) {
             long frameStart = System.currentTimeMillis();

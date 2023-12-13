@@ -64,9 +64,14 @@ public final class ShaderProgram {
 
     public void uploadStandardUniforms() {
         int colorLocation = this.getUniformLocation("Color");
+        int projectionMatrixLocation = this.getUniformLocation("ProjectionMatrix");
 
         if (colorLocation != -1) {
             glUniform4fv(colorLocation, RenderState.getColor());
+        }
+
+        if (projectionMatrixLocation != -1) {
+            glUniformMatrix4fv(projectionMatrixLocation, false, RenderState.getProjectionMatrix());
         }
     }
 

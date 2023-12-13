@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform vec4 Color;
+uniform mat4 ProjectionMatrix;
 
 layout(location = 0) in vec2 vertexPosition_screenSpace;
 layout(location = 1) in vec2 vertexUV;
@@ -8,15 +9,7 @@ layout(location = 1) in vec2 vertexUV;
 // out vec3 fragmentColor;
 out vec2 UV;
 
-const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
-const vec2 SCREEN_DIMENSIONS_OVER_2 = vec2(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
-
 void main() {
-    vec2 vertexPosition_homoSpace = (vertexPosition_screenSpace - SCREEN_DIMENSIONS_OVER_2) / SCREEN_DIMENSIONS_OVER_2;
-
-    gl_Position = vec4(vertexPosition_homoSpace, 0, 1);
-
-    // fragmentColor = color;
+    gl_Position = ProjectionMatrix * vec4(vertexPosition_screenSpace, 0, 1);
     UV = vertexUV;
 }

@@ -81,9 +81,10 @@ public class World {
     private Vec2 findApplePos() {
         Vec2 pos;
 
+        // FIXME: This will infinite loop if there are no more spaces to place an apple
         do {
             pos = new Vec2((1 + this.random.nextInt(this.tilesX - 2)), (1 + this.random.nextInt(this.tilesY - 2)));
-        } while (this.apples.contains(pos) && this.snake.getPath().contains(pos)); // FIXME - Slow, have to walk the whole linked list for the snek
+        } while (this.apples.contains(pos) && this.snake.getPath().contains(pos)); /* Avoid placing an apple where there is already an apple or the snake */
 
         return pos;
     }
