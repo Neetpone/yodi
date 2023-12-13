@@ -3,14 +3,14 @@ package org.appledash.noodel;
 import lombok.Getter;
 import org.appledash.noodel.util.Vec2;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 
 public class Snake {
     public Direction direction = Direction.RIGHT;
     public Direction prevDirection = this.direction;
 
     @Getter
-    private final LinkedList<Vec2> path = new LinkedList<>();
+    private final ArrayDeque<Vec2> path = new ArrayDeque<>();
 
     public Snake(Vec2 position) {
         this.path.add(position);

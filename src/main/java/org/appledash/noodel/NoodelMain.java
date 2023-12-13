@@ -1,5 +1,6 @@
 package org.appledash.noodel;
 
+import org.appledash.noodel.render.FontRenderer;
 import org.appledash.noodel.render.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.render.VertexFormat;
@@ -14,6 +15,8 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
 import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -49,6 +52,7 @@ public final class NoodelMain {
     private long lastUpdate = -1;
     private long updateCount;
     private SpriteSheet spriteSheet;
+    private FontRenderer fontRenderer;
 
     private void init() {
         this.window = new GameWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -69,6 +73,7 @@ public final class NoodelMain {
 
         this.spriteSheet = new SpriteSheet(Texture2D.fromResource("textures/terrain.png"), 16, 16);
         this.gameOverTexture = Texture2D.fromResource("textures/game_over.png");
+        this.fontRenderer = new FontRenderer(new Font("Verdana", Font.PLAIN, 9 * 4));
         this.world.reset();
 
         glUniform1i(RenderUtil.POSITION_TEXTURE.getUniformLocation("textureSampler"), 0);
@@ -127,6 +132,11 @@ public final class NoodelMain {
                 // Set the color back to normal
                 RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
                 tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
+                tess.reset();
+
+                this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 0, 0);
+
+                ///RenderUtil.drawTexture2D(tess, this.fontRenderer.getTexture(), 0, 0, SCALED_WIDTH, SCALED_HEIGHT);
             }
 
             glfwSwapBuffers(this.window.getWindowId());
@@ -140,7 +150,7 @@ public final class NoodelMain {
     }
 
     private void drawYoditax(Tesselator2D tess, Snake yodi) {
-        List<Vec2> segments = yodi.getPath();
+        List<Vec2> segments = new ArrayList<>(yodi.getPath());
         Vec2 headPos = segments.get(0);
         Snake.Direction facing = Mth.adjacency(headPos, segments.get(1));
 
@@ -160,7 +170,7 @@ public final class NoodelMain {
         // Draw the middle segments
         for (int i = 1; i < count - 1; i++) {
             Vec2 segment = segments.get(i);
-            Vec2 nextSegment = segments.get((i + 1));
+            Vec2 nextSegment = segments.get(i + 1);
 
             Snake.Direction nextFacing = Mth.adjacency(segment, nextSegment);
 
