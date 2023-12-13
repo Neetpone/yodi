@@ -30,8 +30,8 @@ public class SpriteSheet {
 
     // upper 16 bits = U, lower 16 bits = V
     public int getSpriteUV(int spriteIndex) {
-        int row = spriteIndex / this.xCount;
-        int col = spriteIndex % this.yCount;
+        int row = spriteIndex % this.xCount;
+        int col = spriteIndex / this.yCount;
 
         return ((row * this.spriteWidth) << Short.SIZE) | (col * this.spriteHeight);
     }

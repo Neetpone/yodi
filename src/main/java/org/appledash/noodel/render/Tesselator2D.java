@@ -28,6 +28,12 @@ public class Tesselator2D {
         this.verticesBuffer[format.ordinal()].put(vertices);
     }
 
+    public void putVertexWithUV(VertexFormat format, float x, float y, float u, float v) {
+        this.ensureSpace(format, 4);
+        this.verticesBuffer[format.ordinal()]
+                .put(x).put(y)
+                .put(u).put(v);
+    }
 
     /**
      * Get the raw vertex data in the buffer.

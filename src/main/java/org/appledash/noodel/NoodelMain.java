@@ -4,11 +4,13 @@ import org.appledash.noodel.render.TexturedQuadRenderer;
 import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
 import org.appledash.noodel.util.FrameCounter;
+import org.appledash.noodel.util.Mth;
 import org.appledash.noodel.util.Vec2;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 
 import javax.swing.*;
+import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
@@ -21,13 +23,13 @@ public final class NoodelMain {
     private static final int DEFAULT_HEIGHT = 1200;
 
     /* correspond to the values mapped in the shader */
-    private static final int SCALED_WIDTH = 800;
-    private static final int SCALED_HEIGHT = 600;
+    private static final int SCALED_WIDTH = 320;
+    private static final int SCALED_HEIGHT = 240;
 
-    private static final int TILE_SIZE = 10;
+    private static final int TILE_SIZE = 16;
     private static final int TILES_X = SCALED_WIDTH / TILE_SIZE;
     private static final int TILES_Y = SCALED_HEIGHT / TILE_SIZE;
-    private static final int UPDATE_INTERVAL = 100; /* in milliseconds */
+    private static final int UPDATE_INTERVAL = 150; /* in milliseconds */
 
     private final World world = new World(TILES_X, TILES_Y);
     private final FrameCounter frameCounter = new FrameCounter();
@@ -37,6 +39,7 @@ public final class NoodelMain {
 
     private boolean paused;
     private long lastUpdate = -1;
+    private long updateCount;
 
     private void init() {
         this.window = new GameWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -59,8 +62,6 @@ public final class NoodelMain {
         this.world.reset();
     }
 
-
-
     private void mainLoop() {
         glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
 
@@ -70,6 +71,7 @@ public final class NoodelMain {
             if (((frameStart - this.lastUpdate) >= UPDATE_INTERVAL) && !this.paused) {
                 this.world.update();
                 this.lastUpdate = frameStart;
+                this.updateCount++;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -86,13 +88,14 @@ public final class NoodelMain {
                 this.drawTile(TILES_X - 1, y, Terrain.OBSIDIAN);
             }
 
-            this.drawTiles(this.world.getApples(), Terrain.RED_WOOL);
-            this.drawTiles(this.world.getSnake().getPath(), Terrain.LIME_WOOL);
+            this.drawTiles(this.world.getApples(), Terrain.BREAD);
+            // this.drawTiles(this.world.getSnake().getPath(), Terrain.LIME_WOOL);
+            this.drawYoditax(this.world.getSnake());
 
             this.quadRenderer.draw(this.quadRenderer.shader);
 
-            this.quadRenderer.putColoredQuad(100, 100, 100, 100, 1, 0, 0, 1);
-            this.quadRenderer.draw(this.quadRenderer.shader2);
+            // this.quadRenderer.putColoredQuad(100, 100, 100, 100, 1, 0, 0, 1);
+            // this.quadRenderer.draw(this.quadRenderer.shader2);
 
             this.quadRenderer.reset();
 
@@ -103,6 +106,97 @@ public final class NoodelMain {
         }
 
         this.quadRenderer.delete();
+    }
+
+    private void drawYoditax(Snake yodi) {
+        List<Vec2> segments = yodi.getPath();
+        Vec2 headPos = segments.get(0);
+        Snake.Direction facing = Mth.adjacency(headPos, segments.get(1));
+
+        int count = segments.size();
+        int bodyCount = 0;
+        int textureSubtrahend = (this.updateCount % 2 == 0) ? 0 : 64;
+
+        int headTexture = switch (facing) {
+            case UP -> Terrain.YODI_HEAD_D;
+            case DOWN -> Terrain.YODI_HEAD_U;
+            case LEFT -> Terrain.YODI_HEAD_R;
+            case RIGHT -> Terrain.YODI_HEAD_L;
+        };
+        this.drawTile(headPos.x(), headPos.y(), headTexture - textureSubtrahend);
+
+        for (int i = 1; i < count - 1; i++) {
+            Vec2 segment = segments.get(i);
+            Vec2 nextSegment = segments.get((i + 1));
+
+            Snake.Direction nextFacing = Mth.adjacency(segment, nextSegment);
+
+            if (nextFacing == null) {
+                continue;
+            }
+
+            int texture = this.computeTexture(facing, nextFacing);
+
+            texture = switch (texture) {
+                case Terrain.YODI_MIDDLE_R -> ((bodyCount % 2) == 0) ? Terrain.YODI_MIDDLE_R : Terrain.YODI_MIDDLE_L;
+                case Terrain.YODI_MIDDLE_U -> ((bodyCount % 2) == 0) ? Terrain.YODI_MIDDLE_U : Terrain.YODI_MIDDLE_D;
+                default -> texture;
+            };
+
+            this.drawTile(segment.x(), segment.y(), texture - textureSubtrahend);
+
+            facing = nextFacing;
+            bodyCount++;
+        }
+
+        int tailTexture = switch (facing) {
+            case UP -> Terrain.YODI_TAIL_D;
+            case DOWN -> Terrain.YODI_TAIL_U;
+            case LEFT -> Terrain.YODI_TAIL_R;
+            case RIGHT -> Terrain.YODI_TAIL_L;
+        };
+
+        this.drawTile(segments.get(count - 1).x(), segments.get(count - 1).y(), tailTexture - textureSubtrahend);
+    }
+
+    // This is kind of WTF because the directions of the args are the directions
+    // the snake is going, but the directions of the angled textures are the directions they connect on.
+    private int computeTexture(Snake.Direction incoming, Snake.Direction outgoing) {
+        if (incoming == Snake.Direction.UP) {
+            if (outgoing == Snake.Direction.UP) {
+                return Terrain.YODI_MIDDLE_U;
+            } else if (outgoing == Snake.Direction.RIGHT) {
+                return Terrain.YODI_ANGLE_DR;
+            } else if (outgoing == Snake.Direction.LEFT) {
+                return Terrain.YODI_ANGLE_DL;
+            }
+        } else if (incoming == Snake.Direction.DOWN) {
+            if (outgoing == Snake.Direction.DOWN) {
+                return Terrain.YODI_MIDDLE_U;
+            } else if (outgoing == Snake.Direction.RIGHT) {
+                return Terrain.YODI_ANGLE_UR;
+            } else if (outgoing == Snake.Direction.LEFT) {
+                return Terrain.YODI_ANGLE_UL;
+            }
+        } else if (incoming == Snake.Direction.RIGHT) {
+            if (outgoing == Snake.Direction.LEFT) {
+                return Terrain.YODI_MIDDLE_R;
+            } else if (outgoing == Snake.Direction.UP) {
+                return Terrain.YODI_ANGLE_UL;
+            } else if (outgoing == Snake.Direction.DOWN) {
+                return Terrain.YODI_ANGLE_DL;
+            }
+        } else if (incoming == Snake.Direction.LEFT) {
+            if (outgoing == Snake.Direction.RIGHT) {
+                return Terrain.YODI_MIDDLE_R;
+            } else if (outgoing == Snake.Direction.UP) {
+                return Terrain.YODI_ANGLE_UR;
+            } else if (outgoing == Snake.Direction.DOWN) {
+                return Terrain.YODI_ANGLE_DR;
+            }
+        }
+
+        return Terrain.YODI_MIDDLE_R;
     }
 
     private void drawTile(int tileX, int tileY, int blockID) {

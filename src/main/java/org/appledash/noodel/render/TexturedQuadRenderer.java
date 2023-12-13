@@ -27,7 +27,6 @@ public class TexturedQuadRenderer {
         glUniform1i(this.shader.getUniformLocation("textureSampler"), 0);
 
         this.shader2 = ShaderProgram.loadFromResources("shaders/2d", VertexFormat.POSITION_COLOR_2D);
-
     }
 
     public void putQuad(int x, int y, int w, int h, int spriteIndex) {
@@ -47,7 +46,6 @@ public class TexturedQuadRenderer {
                 this.generateColoredQuadVertices(x, y, w, h, r, g, b, a)
         );
     }
-
     private float[] generateColoredQuadVertices(int x, int y, int w, int h, float r, float g, float b, float a) {
         return new float[] {
                 x, y,       // bottom left
@@ -93,7 +91,6 @@ public class TexturedQuadRenderer {
 
         int offset = 0;
         for (int i = 0; i < attributeCount; i++) {
-
             glEnableVertexAttribArray(i);
             glBindBuffer(GL_ARRAY_BUFFER, vertexBuffers[i]);
             glVertexAttribPointer(i, vertexFormat.attributeSizes[i] / Float.BYTES, GL_FLOAT, false, totalSize, offset);
@@ -141,6 +138,7 @@ public class TexturedQuadRenderer {
         float bSz = this.spriteSheet.getSpriteWidth();
 
         return new float[]{
+                // triangle0
                 x, y,       // bottom left
                 (u / tSz), (v + bSz) / tSz,
 
@@ -150,14 +148,15 @@ public class TexturedQuadRenderer {
                 x, (y + h), // top left
                 (u / tSz), (v / tSz),
 
+                // triangle1
                 x, (y + h),  // top left
                 (u / tSz), (v / tSz),
 
+                (x + w), y, // bottom right
+                (u + bSz) / tSz, (v + bSz) / tSz,
+
                 (x + w), (y + h), // top right
                 (u + bSz) / tSz, v / tSz,
-
-                (x + w), y, // bottom right
-                (u + bSz) / tSz, (v + bSz) / tSz
         };
     }
 }
