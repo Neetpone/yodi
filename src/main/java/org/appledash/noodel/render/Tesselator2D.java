@@ -6,6 +6,7 @@ import org.lwjgl.BufferUtils;
 import java.nio.FloatBuffer;
 
 public class Tesselator2D {
+    public static final Tesselator2D INSTANCE = new Tesselator2D();
     private static final int INITIAL_CAPACITY = 64; /* chosen by fair dice roll */
     private static final float GROW_FACTOR = 1.5f;
 

@@ -50,8 +50,6 @@ public class World {
             this.spawnApple();
         }
 
-
-
         /* this is a little weird, but the reason I do it this way is that the snake's path is a linked list,
          * and iterating like this is faster than using a bounded indexed for loop. */
         int pathSize = this.snake.getPath().size();
@@ -77,6 +75,10 @@ public class World {
 
     public Snake getSnake() {
         return this.snake;
+    }
+
+    public boolean wantsReset() {
+        return this.wantReset;
     }
 
     private Vec2 findApplePos() {

@@ -72,43 +72,27 @@ public class TexturedQuadRenderer {
     public void draw(ShaderProgram shader) {
         VertexFormat vertexFormat = shader.getVertexFormat();
         int attributeCount = vertexFormat.attributeSizes.length;
-        FloatBuffer[] buffers = new FloatBuffer[attributeCount];
-        int[] vertexBuffers = shader.getBuffers();
-
-        int totalSize = 0;
-
-        for (int i = 0; i < attributeCount; i++) {
-            buffers[i] = this.tesselator2D.getVertices(vertexFormat);
-            totalSize += vertexFormat.attributeSizes[i];
-        }
+        VertexBuffer buffer = vertexFormat.getBuffer();
 
         if (vertexFormat == VertexFormat.POSITION_TEXTURE_2D) {
-            glActiveTexture(GL_TEXTURE0);
+            // glActiveTexture(GL_TEXTURE0);
             this.spriteSheet.getTexture().bind();
         }
 
         shader.use();
+        FloatBuffer vertices = this.tesselator2D.getVertices(vertexFormat);
 
-        int offset = 0;
-        for (int i = 0; i < attributeCount; i++) {
-            glEnableVertexAttribArray(i);
-            glBindBuffer(GL_ARRAY_BUFFER, vertexBuffers[i]);
-            glVertexAttribPointer(i, vertexFormat.attributeSizes[i] / Float.BYTES, GL_FLOAT, false, totalSize, offset);
-            glBufferData(GL_ARRAY_BUFFER, buffers[i], GL_STATIC_DRAW);
-
-            offset = vertexFormat.attributeSizes[i];
-        }
+        buffer.upload(vertexFormat, vertices);
+        vertexFormat.setupState();
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glDrawArrays(GL_TRIANGLES, 0, buffers[0].limit() / attributeCount);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.limit() / attributeCount);
 
         glDisable(GL_BLEND);
 
-        for (int i = 0; i < attributeCount; i++) {
-            glDisableVertexAttribArray(i);
-        }
+        vertexFormat.clearState();
     }
 
     public void reset() {
@@ -134,29 +118,31 @@ public class TexturedQuadRenderer {
     }
 
     private float[] generateQuadVertices(int x, int y, int w, int h, int u, int v) {
-        float tSz = this.spriteSheet.getTexture().getWidth();
-        float bSz = this.spriteSheet.getSpriteWidth();
+        float tW = this.spriteSheet.getTexture().getWidth();
+        float sW = this.spriteSheet.getSpriteWidth();
+        float tH = this.spriteSheet.getTexture().getHeight();
+        float sH = this.spriteSheet.getSpriteHeight();
 
         return new float[]{
                 // triangle0
                 x, y,       // bottom left
-                (u / tSz), (v + bSz) / tSz,
+                (u / tW), (v + sH) / tH,
 
                 (x + w), y, // bottom right
-                (u + bSz) / tSz, (v + bSz) / tSz,
+                (u + sW) / tW, (v + sH) / tH,
 
                 x, (y + h), // top left
-                (u / tSz), (v / tSz),
+                (u / tW), (v / tH),
 
                 // triangle1
                 x, (y + h),  // top left
-                (u / tSz), (v / tSz),
+                (u / tW), (v / tH),
 
                 (x + w), y, // bottom right
-                (u + bSz) / tSz, (v + bSz) / tSz,
+                (u + sW) / tW, (v + sH) / tH,
 
                 (x + w), (y + h), // top right
-                (u + bSz) / tSz, v / tSz,
+                (u + sW) / tW, v / tH,
         };
     }
 }

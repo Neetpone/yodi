@@ -1,5 +1,7 @@
 package org.appledash.noodel;
 
+import org.appledash.noodel.render.FontRenderer;
+import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.render.TexturedQuadRenderer;
 import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
@@ -23,8 +25,8 @@ public final class NoodelMain {
     private static final int DEFAULT_HEIGHT = 1200;
 
     /* correspond to the values mapped in the shader */
-    private static final int SCALED_WIDTH = 320;
-    private static final int SCALED_HEIGHT = 240;
+    private static final int SCALED_WIDTH = 640;
+    private static final int SCALED_HEIGHT = 480;
 
     private static final int TILE_SIZE = 16;
     private static final int TILES_X = SCALED_WIDTH / TILE_SIZE;
@@ -36,8 +38,11 @@ public final class NoodelMain {
 
     private GameWindow window;
     private TexturedQuadRenderer quadRenderer;
+    private FontRenderer fontRenderer;
+    private Texture2D gameOverTexture;
 
     private boolean paused;
+    private boolean gameOver;
     private long lastUpdate = -1;
     private long updateCount;
 
@@ -59,6 +64,8 @@ public final class NoodelMain {
         glBindVertexArray(glGenVertexArrays());
 
         this.quadRenderer = new TexturedQuadRenderer(Texture2D.fromResource("textures/terrain.png"), 16, 16);
+        this.fontRenderer = new FontRenderer("textures/font.png");
+        this.gameOverTexture = Texture2D.fromResource("textures/game_over.png");
         this.world.reset();
     }
 
@@ -70,34 +77,47 @@ public final class NoodelMain {
 
             if (((frameStart - this.lastUpdate) >= UPDATE_INTERVAL) && !this.paused) {
                 this.world.update();
+
+                if (this.world.wantsReset()) {
+                    this.gameOver = true;
+                    this.paused = true;
+                }
                 this.lastUpdate = frameStart;
                 this.updateCount++;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Top and bottom border
-            for (int x = 0; x < TILES_X; x++) {
-                this.drawTile(x, 0, Terrain.OBSIDIAN);
-                this.drawTile(x, TILES_Y - 1, Terrain.OBSIDIAN);
+            if (this.gameOver) {
+                Tesselator2D tess = Tesselator2D.INSTANCE;
+                this.gameOverTexture.bind();
+                this.quadRenderer.putQuad(0, 0, SCALED_WIDTH, SCALED_HEIGHT, 0);
+            } else {
+                // Top and bottom border
+                for (int x = 0; x < TILES_X; x++) {
+                    this.drawTile(x, 0, Terrain.OBSIDIAN);
+                    this.drawTile(x, TILES_Y - 1, Terrain.OBSIDIAN);
+                }
+
+                // Left and right border
+                for (int y = 1; y < TILES_Y - 1; y++) {
+                    this.drawTile(0, y, Terrain.OBSIDIAN);
+                    this.drawTile(TILES_X - 1, y, Terrain.OBSIDIAN);
+                }
+
+                this.drawTiles(this.world.getApples(), Terrain.BREAD);
+                // this.drawTiles(this.world.getSnake().getPath(), Terrain.LIME_WOOL);
+                this.drawYoditax(this.world.getSnake());
+
+                this.quadRenderer.draw(this.quadRenderer.shader);
+
+                //this.fontRenderer.drawString("0123", 10, 10);
+
+                // this.quadRenderer.putColoredQuad(100, 100, 100, 100, 1, 0, 0, 1);
+                // this.quadRenderer.draw(this.quadRenderer.shader2);
+
+                this.quadRenderer.reset();
             }
-
-            // Left and right border
-            for (int y = 1; y < TILES_Y - 1; y++) {
-                this.drawTile(0, y, Terrain.OBSIDIAN);
-                this.drawTile(TILES_X - 1, y, Terrain.OBSIDIAN);
-            }
-
-            this.drawTiles(this.world.getApples(), Terrain.BREAD);
-            // this.drawTiles(this.world.getSnake().getPath(), Terrain.LIME_WOOL);
-            this.drawYoditax(this.world.getSnake());
-
-            this.quadRenderer.draw(this.quadRenderer.shader);
-
-            // this.quadRenderer.putColoredQuad(100, 100, 100, 100, 1, 0, 0, 1);
-            // this.quadRenderer.draw(this.quadRenderer.shader2);
-
-            this.quadRenderer.reset();
 
             glfwSwapBuffers(this.window.getWindowId());
             glfwPollEvents();
@@ -115,6 +135,7 @@ public final class NoodelMain {
 
         int count = segments.size();
         int bodyCount = 0;
+        // Use the other animation frame every other update
         int textureSubtrahend = (this.updateCount % 2 == 0) ? 0 : 64;
 
         int headTexture = switch (facing) {
@@ -125,6 +146,7 @@ public final class NoodelMain {
         };
         this.drawTile(headPos.x(), headPos.y(), headTexture - textureSubtrahend);
 
+        // Draw the middle segments
         for (int i = 1; i < count - 1; i++) {
             Vec2 segment = segments.get(i);
             Vec2 nextSegment = segments.get((i + 1));
@@ -137,6 +159,7 @@ public final class NoodelMain {
 
             int texture = this.computeTexture(facing, nextFacing);
 
+            // This deals with the flipping of the middle segments
             texture = switch (texture) {
                 case Terrain.YODI_MIDDLE_R -> ((bodyCount % 2) == 0) ? Terrain.YODI_MIDDLE_R : Terrain.YODI_MIDDLE_L;
                 case Terrain.YODI_MIDDLE_U -> ((bodyCount % 2) == 0) ? Terrain.YODI_MIDDLE_U : Terrain.YODI_MIDDLE_D;
@@ -149,6 +172,7 @@ public final class NoodelMain {
             bodyCount++;
         }
 
+        // Deal with the tail
         int tailTexture = switch (facing) {
             case UP -> Terrain.YODI_TAIL_D;
             case DOWN -> Terrain.YODI_TAIL_U;
@@ -211,6 +235,10 @@ public final class NoodelMain {
 
     private void keyCallback(long window, int key, int scancode, int action, int mods) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
+            if (this.gameOver) {
+                this.gameOver = false;
+            }
+
             this.paused = !this.paused;
             // this.window.setShouldClose(true);
         }

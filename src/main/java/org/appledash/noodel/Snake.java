@@ -13,7 +13,7 @@ public class Snake {
     public Snake(Vec2 position) {
         this.path.add(position);
 
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 1; i <= 3; i++) {
             this.path.add(position.sub(i, 0));
         }
     }
