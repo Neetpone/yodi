@@ -10,6 +10,7 @@ public final class ShaderProgram {
     private final int programId;
     @Getter
     private final VertexFormat vertexFormat;
+    private final StandardUniforms standardUniforms;
 
     private ShaderProgram(String vertexCode, String fragmentCode, VertexFormat vertexFormat) {
         int vertexId = glCreateShader(GL_VERTEX_SHADER);
@@ -52,6 +53,8 @@ public final class ShaderProgram {
         glDeleteShader(fragmentId);
 
         this.vertexFormat = vertexFormat;
+
+        this.standardUniforms = new StandardUniforms(this.programId);
     }
 
     public int getUniformLocation(String name) {
@@ -63,16 +66,7 @@ public final class ShaderProgram {
     }
 
     public void uploadStandardUniforms() {
-        int colorLocation = this.getUniformLocation("Color");
-        int projectionMatrixLocation = this.getUniformLocation("ProjectionMatrix");
-
-        if (colorLocation != -1) {
-            glUniform4fv(colorLocation, RenderState.getColor());
-        }
-
-        if (projectionMatrixLocation != -1) {
-            glUniformMatrix4fv(projectionMatrixLocation, false, RenderState.getProjectionMatrix());
-        }
+        this.standardUniforms.upload();
     }
 
     public void delete() {

@@ -12,7 +12,7 @@ import java.util.Map;
 import static org.lwjgl.opengl.GL11.*;
 
 public class FontRenderer {
-    private static final float SCALED_FONT_HEIGHT = 9.0F;
+    public static final float SCALED_FONT_HEIGHT = 9.0F;
     private static final int PADDING = 1;
     private static final int TEXTURE_ROWS = 10;
     private static final int TEXTURE_COLS = 10;
@@ -101,6 +101,21 @@ public class FontRenderer {
 
         tess.draw(GL_QUADS, RenderUtil.POSITION_TEXTURE);
         tess.reset();
+    }
+
+    public void drawCenteredString(String s, int x, int y) {
+        float width = this.getStringWidth(s);
+        this.drawString(s, x - width / 2, y);
+    }
+
+    public float getStringWidth(String s) {
+        float width = 0;
+
+        for (char c : s.toCharArray()) {
+            width += this.charWidths[c - ' '] / this.scale;
+        }
+
+        return width;
     }
 
     /**

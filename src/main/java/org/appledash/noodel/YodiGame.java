@@ -1,9 +1,13 @@
 package org.appledash.noodel;
 
+import lombok.Getter;
 import org.appledash.noodel.render.FontRenderer;
 import org.appledash.noodel.render.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.render.VertexFormat;
+import org.appledash.noodel.screen.Screen;
+import org.appledash.noodel.screen.type.GameOverScreen;
+import org.appledash.noodel.screen.type.PauseScreen;
 import org.appledash.noodel.texture.SpriteSheet;
 import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
@@ -27,7 +31,7 @@ import static org.lwjgl.opengl.GL20.glUniform1i;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
-public final class NoodelMain {
+public final class YodiGame {
     /* the actual window size */
     private static final int DEFAULT_WIDTH = 1600;
     private static final int DEFAULT_HEIGHT = 1200;
@@ -41,26 +45,24 @@ public final class NoodelMain {
     private static final int TILES_Y = SCALED_HEIGHT / TILE_SIZE;
     private static final int UPDATE_INTERVAL = 150; /* in milliseconds */
 
+    @Getter
     private final World world = new World(TILES_X, TILES_Y);
     private final FrameCounter frameCounter = new FrameCounter();
 
     private GameWindow window;
-    private Texture2D gameOverTexture;
 
-    private boolean paused;
-    private boolean gameOver;
     private long lastUpdate = -1;
     private long updateCount;
     private SpriteSheet spriteSheet;
+    @Getter
     private FontRenderer fontRenderer;
+    private Screen currentScreen;
 
     private void init() {
         this.window = new GameWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
         this.window.setKeyCallback(this::keyCallback);
-        this.window.setSizeCallback((window, width, height) ->
-                glViewport(0, 0, width, height)
-        );
+        this.window.setSizeCallback(this::resizeCallback);
 
         this.window.centerOnScreen();
         this.window.makeContextCurrent();
@@ -71,8 +73,9 @@ public final class NoodelMain {
 
         glBindVertexArray(glGenVertexArrays());
 
+        this.resizeCallback(this.window.getWindowId(), DEFAULT_WIDTH, DEFAULT_HEIGHT);
+
         this.spriteSheet = new SpriteSheet(Texture2D.fromResource("textures/terrain.png"), 16, 16);
-        this.gameOverTexture = Texture2D.fromResource("textures/game_over.png");
         this.fontRenderer = new FontRenderer(new Font("Verdana", Font.PLAIN, 36));
         this.world.reset();
 
@@ -80,64 +83,30 @@ public final class NoodelMain {
     }
 
     private void mainLoop() {
-        Tesselator2D tess = Tesselator2D.INSTANCE;
-
         glClearColor(158 / 255F, 203 / 255F, 145 / 255F, 1.0F);
-        RenderState.ortho(0, SCALED_WIDTH, 0, SCALED_HEIGHT, -1, 1);
 
         while (!this.window.shouldClose()) {
             long frameStart = System.currentTimeMillis();
 
-            if (((frameStart - this.lastUpdate) >= UPDATE_INTERVAL) && !this.paused) {
-                this.world.update();
-
-                if (this.world.wantsReset()) {
-                    this.gameOver = true;
-                    this.paused = true;
+            if (((frameStart - this.lastUpdate) >= UPDATE_INTERVAL)) {
+                if (this.currentScreen != null) {
+                    this.currentScreen.update();
+                } else {
+                    this.update();
                 }
                 this.lastUpdate = frameStart;
-                this.updateCount++;
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glEnable(GL_TEXTURE_2D);
             glActiveTexture(GL_TEXTURE0);
+            RenderState.resetTranslations();
 
-            if (this.gameOver) {
-                RenderUtil.drawTexture2D(tess, this.gameOverTexture, 0, 0, SCALED_WIDTH, SCALED_HEIGHT);
-            } else {
-                tess.begin(VertexFormat.POSITION_TEXTURE_2D);
+            if (this.currentScreen == null || this.currentScreen.isTranslucent()) {
+                this.renderGame();
+            }
 
-                // Top and bottom border
-                for (int x = 0; x < TILES_X; x++) {
-                    this.drawTile(tess, x, 0, Terrain.GRASS);
-                    this.drawTile(tess, x, TILES_Y - 1, Terrain.GRASS);
-                }
-
-                // Left and right border
-                for (int y = 1; y < TILES_Y - 1; y++) {
-                    this.drawTile(tess, 0, y, Terrain.GRASS);
-                    this.drawTile(tess, TILES_X - 1, y, Terrain.GRASS);
-                }
-
-                // Set the color for the border and render the border
-                RenderState.color(158, 203, 145, 255); // This is a nice green
-                this.spriteSheet.getTexture().bind();
-                tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
-
-                tess.begin(VertexFormat.POSITION_TEXTURE_2D);
-
-                this.drawTiles(tess, this.world.getApples(), Terrain.BREAD);
-                this.drawYoditax(tess, this.world.getSnake());
-
-                // Set the color back to normal
-                RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
-                tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
-                tess.reset();
-
-                this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 0, 0);
-
-                ///RenderUtil.drawTexture2D(tess, this.fontRenderer.getTexture(), 0, 0, SCALED_WIDTH, SCALED_HEIGHT);
+            if (this.currentScreen != null) {
+                this.currentScreen.render();
             }
 
             glfwSwapBuffers(this.window.getWindowId());
@@ -145,9 +114,57 @@ public final class NoodelMain {
 
             this.frameCounter.update(System.currentTimeMillis() - frameStart);
         }
+    }
 
-        // this.positionTextureShader.delete();
-        this.gameOverTexture.delete();
+    private void update() {
+        this.world.update();
+
+        if (this.world.wantsReset() && this.currentScreen == null) {
+            this.currentScreen = new GameOverScreen(this);
+        }
+
+        this.updateCount++;
+    }
+
+    private void renderGame() {
+        Tesselator2D tess = Tesselator2D.INSTANCE;
+        glEnable(GL_TEXTURE_2D);
+        tess.begin(VertexFormat.POSITION_TEXTURE_2D);
+
+        // Top and bottom border
+        for (int x = 0; x < TILES_X; x++) {
+            this.drawTile(tess, x, 0, Terrain.GRASS);
+            this.drawTile(tess, x, TILES_Y - 1, Terrain.GRASS);
+        }
+
+        // Left and right border
+        for (int y = 1; y < TILES_Y - 1; y++) {
+            this.drawTile(tess, 0, y, Terrain.GRASS);
+            this.drawTile(tess, TILES_X - 1, y, Terrain.GRASS);
+        }
+
+        // Set the color for the border and render the border
+        RenderState.color(158, 203, 145, 255); // This is a nice green
+        this.spriteSheet.getTexture().bind();
+        tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
+
+        tess.begin(VertexFormat.POSITION_TEXTURE_2D);
+
+        this.drawTiles(tess, this.world.getApples(), Terrain.BREAD);
+        this.drawYoditax(tess, this.world.getSnake());
+
+        // Set the color back to normal
+        RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
+        tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
+        tess.reset();
+
+        this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT - 2);
+        this.fontRenderer.drawString("Score: " + this.world.getScore(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT * 2 - 2);
+    }
+
+    public void resetGame() {
+        this.world.reset();
+        this.currentScreen = null;
     }
 
     private void drawYoditax(Tesselator2D tess, Snake yodi) {
@@ -273,20 +290,25 @@ public final class NoodelMain {
         }
     }
 
+    private void resizeCallback(long window, int width, int height) {
+        glViewport(0, 0, width, height);
+        RenderState.ortho(0, SCALED_WIDTH, 0, SCALED_HEIGHT, -1, 1);
+        Screen.setWidth(SCALED_WIDTH);
+        Screen.setHeight(SCALED_HEIGHT);
+    }
+
     private void keyCallback(long window, int key, int scancode, int action, int mods) {
-        if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-            if (this.gameOver) {
-                this.gameOver = false;
-            }
-
-            this.paused = !this.paused;
-        }
-
         if (action != GLFW_PRESS) {
             return;
         }
 
-        if (this.paused) {
+        if (this.currentScreen != null) {
+            this.currentScreen.keyCallback(key);
+            return;
+        }
+
+        if (key == GLFW_KEY_ESCAPE) {
+            this.currentScreen = new PauseScreen(this);
             return;
         }
 
@@ -305,8 +327,12 @@ public final class NoodelMain {
         }
     }
 
+    public void closeScreen() {
+        this.currentScreen = null;
+    }
+
     public static void main(String[] args) {
-        NoodelMain noodelMain = new NoodelMain();
+        YodiGame yodiGame = new YodiGame();
         try {
             GLFWErrorCallback.createPrint(System.err).set();
 
@@ -314,8 +340,8 @@ public final class NoodelMain {
                 throw new IllegalStateException("Failed to initialize GLFW");
             }
 
-            noodelMain.init();
-            noodelMain.mainLoop();
+            yodiGame.init();
+            yodiGame.mainLoop();
         } catch (Exception e) {
             e.printStackTrace();
             alertError("Error!", e.getMessage());

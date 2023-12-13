@@ -15,6 +15,8 @@ public class World {
     private boolean wantReset;
     @Getter
     private Snake snake;
+    @Getter
+    private int score;
 
     public World(int tilesX, int tilesY) {
         this.tilesX = tilesX;
@@ -48,6 +50,7 @@ public class World {
         this.snake.move(hasEaten);
 
         if (hasEaten) {
+            this.score += 50;
             this.spawnApple();
         }
 
@@ -63,6 +66,7 @@ public class World {
     }
 
     public void reset() {
+        this.score = 0;
         this.snake = new Snake(Vec2.of(this.tilesX / 2, this.tilesY / 2));
         this.apples.clear();
         for (int i = 0; i < 5; i++) {

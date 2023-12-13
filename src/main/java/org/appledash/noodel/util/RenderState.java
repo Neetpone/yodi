@@ -3,6 +3,7 @@ package org.appledash.noodel.util;
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fStack;
 import org.lwjgl.BufferUtils;
 
 import java.nio.FloatBuffer;
@@ -23,6 +24,8 @@ public class RenderState {
 
     private static final FloatBuffer PROJECTION_MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
     private static final Matrix4f projectionMatrix = new Matrix4f().identity();
+    private static final FloatBuffer MODEL_VIEW_MATRIX_BUFFER = BufferUtils.createFloatBuffer(16);
+    private static final Matrix4fStack modelViewMatrixStack = new Matrix4fStack(8);
 
     public static void color(float r, float g, float b, float a) {
         color[0] = r;
@@ -41,5 +44,29 @@ public class RenderState {
 
     public static FloatBuffer getProjectionMatrix() {
         return projectionMatrix.get(PROJECTION_MATRIX_BUFFER);
+    }
+
+    public static void pushMatrix() {
+        modelViewMatrixStack.pushMatrix();
+    }
+
+    public static void resetTranslations() {
+        modelViewMatrixStack.identity();
+    }
+
+    public static void translate(float x, float y, float z) {
+        modelViewMatrixStack.translate(x, y, z);
+    }
+
+    public static void scale(float x, float y, float z) {
+        modelViewMatrixStack.scale(x, y, z);
+    }
+
+    public static void popMatrix() {
+        modelViewMatrixStack.popMatrix();
+    }
+
+    public static FloatBuffer getModelViewMatrix() {
+        return modelViewMatrixStack.get(MODEL_VIEW_MATRIX_BUFFER);
     }
 }
