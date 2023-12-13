@@ -1,6 +1,8 @@
 package org.appledash.noodel.render;
 
-import org.appledash.noodel.util.ShaderProgram;
+import org.appledash.noodel.render.gl.ShaderProgram;
+import org.appledash.noodel.render.gl.VertexBuffer;
+import org.appledash.noodel.render.gl.VertexFormat;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
 

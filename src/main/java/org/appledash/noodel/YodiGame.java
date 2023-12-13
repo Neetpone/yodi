@@ -2,9 +2,9 @@ package org.appledash.noodel;
 
 import lombok.Getter;
 import org.appledash.noodel.render.FontRenderer;
-import org.appledash.noodel.render.RenderUtil;
+import org.appledash.noodel.render.util.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
-import org.appledash.noodel.render.VertexFormat;
+import org.appledash.noodel.render.gl.VertexFormat;
 import org.appledash.noodel.screen.Screen;
 import org.appledash.noodel.screen.type.GameOverScreen;
 import org.appledash.noodel.screen.type.PauseScreen;
@@ -13,7 +13,7 @@ import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
 import org.appledash.noodel.util.FrameCounter;
 import org.appledash.noodel.util.Mth;
-import org.appledash.noodel.util.RenderState;
+import org.appledash.noodel.render.util.RenderState;
 import org.appledash.noodel.util.Vec2;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
@@ -156,7 +156,6 @@ public final class YodiGame {
         // Set the color back to normal
         RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
         tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
-        tess.reset();
 
         this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT - 2);
         this.fontRenderer.drawString("Score: " + this.world.getScore(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT * 2 - 2);

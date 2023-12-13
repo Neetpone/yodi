@@ -1,5 +1,7 @@
 package org.appledash.noodel.render;
 
+import org.appledash.noodel.render.gl.VertexFormat;
+import org.appledash.noodel.render.util.RenderUtil;
 import org.appledash.noodel.texture.Texture2D;
 
 import java.awt.*;
@@ -100,7 +102,6 @@ public class FontRenderer {
         }
 
         tess.draw(GL_QUADS, RenderUtil.POSITION_TEXTURE);
-        tess.reset();
     }
 
     public void drawCenteredString(String s, int x, int y) {

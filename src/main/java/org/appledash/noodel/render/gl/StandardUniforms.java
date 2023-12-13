@@ -1,4 +1,6 @@
-package org.appledash.noodel.util;
+package org.appledash.noodel.render.gl;
+
+import org.appledash.noodel.render.util.RenderState;
 
 import static org.lwjgl.opengl.GL20.*;
 

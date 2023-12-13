@@ -1,11 +1,11 @@
 package org.appledash.noodel.screen.type;
 
 import org.appledash.noodel.YodiGame;
-import org.appledash.noodel.render.RenderUtil;
+import org.appledash.noodel.render.util.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.screen.Screen;
 import org.appledash.noodel.texture.Texture2D;
-import org.appledash.noodel.util.RenderState;
+import org.appledash.noodel.render.util.RenderState;
 import org.lwjgl.glfw.GLFW;
 
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;

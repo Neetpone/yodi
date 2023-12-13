@@ -1,7 +1,8 @@
-package org.appledash.noodel.util;
+package org.appledash.noodel.render.util;
 
 import lombok.Getter;
 import lombok.experimental.UtilityClass;
+import org.appledash.noodel.render.gl.ShaderProgram;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.lwjgl.BufferUtils;

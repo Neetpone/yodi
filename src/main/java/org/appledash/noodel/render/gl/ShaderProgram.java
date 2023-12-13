@@ -1,7 +1,7 @@
-package org.appledash.noodel.util;
+package org.appledash.noodel.render.gl;
 
 import lombok.Getter;
-import org.appledash.noodel.render.VertexFormat;
+import org.appledash.noodel.util.ResourceHelper;
 import org.jetbrains.annotations.NotNull;
 
 import static org.lwjgl.opengl.GL20.*;

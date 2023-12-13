@@ -1,8 +1,10 @@
-package org.appledash.noodel.render;
+package org.appledash.noodel.render.util;
 
 import lombok.experimental.UtilityClass;
+import org.appledash.noodel.render.Tesselator2D;
+import org.appledash.noodel.render.gl.VertexFormat;
 import org.appledash.noodel.texture.Texture2D;
-import org.appledash.noodel.util.ShaderProgram;
+import org.appledash.noodel.render.gl.ShaderProgram;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
@@ -25,6 +27,5 @@ public class RenderUtil {
         tess.vertex(startX + width, startY + height).texture(1, 0).next();
 
         tess.draw(GL_TRIANGLE_STRIP, POSITION_TEXTURE);
-        tess.reset();
     }
 }

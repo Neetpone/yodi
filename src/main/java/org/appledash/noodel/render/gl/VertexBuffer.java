@@ -1,4 +1,4 @@
-package org.appledash.noodel.render;
+package org.appledash.noodel.render.gl;
 
 import java.nio.FloatBuffer;
 
