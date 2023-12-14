@@ -1,0 +1,6 @@
+/*.zip
+/dist
+/.idea
+/target
+/dependency-reduced-pom.xml
+/*.log
