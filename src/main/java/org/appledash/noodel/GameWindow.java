@@ -69,4 +69,8 @@ public class GameWindow {
     public void setShouldClose(boolean shouldClose) {
         glfwSetWindowShouldClose(this.windowId, shouldClose);
     }
+
+    public void delete() {
+        glfwDestroyWindow(this.windowId);
+    }
 }

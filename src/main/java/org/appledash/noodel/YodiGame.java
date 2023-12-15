@@ -2,9 +2,10 @@ package org.appledash.noodel;
 
 import lombok.Getter;
 import org.appledash.noodel.render.FontRenderer;
-import org.appledash.noodel.render.util.RenderUtil;
 import org.appledash.noodel.render.Tesselator2D;
 import org.appledash.noodel.render.gl.VertexFormat;
+import org.appledash.noodel.render.util.RenderState;
+import org.appledash.noodel.render.util.RenderUtil;
 import org.appledash.noodel.screen.Screen;
 import org.appledash.noodel.screen.type.GameOverScreen;
 import org.appledash.noodel.screen.type.PauseScreen;
@@ -13,7 +14,6 @@ import org.appledash.noodel.texture.Terrain;
 import org.appledash.noodel.texture.Texture2D;
 import org.appledash.noodel.util.FrameCounter;
 import org.appledash.noodel.util.Mth;
-import org.appledash.noodel.render.util.RenderState;
 import org.appledash.noodel.util.Vec2;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
@@ -25,13 +25,11 @@ import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.glUniform1i;
 import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 
-public final class YodiGame {
+public final class YodiGame implements AutoCloseable {
     /* the actual window size */
     private static final int DEFAULT_WIDTH = 1600;
     private static final int DEFAULT_HEIGHT = 1200;
@@ -49,16 +47,16 @@ public final class YodiGame {
     private final World world = new World(TILES_X, TILES_Y);
     private final FrameCounter frameCounter = new FrameCounter();
 
-    private GameWindow window;
+    private final GameWindow window;
+    private final SpriteSheet spriteSheet;
+    @Getter
+    private final FontRenderer fontRenderer;
+    private Screen currentScreen;
 
     private long lastUpdate = -1;
     private long updateCount;
-    private SpriteSheet spriteSheet;
-    @Getter
-    private FontRenderer fontRenderer;
-    private Screen currentScreen;
 
-    private void init() {
+    public YodiGame() {
         this.window = new GameWindow(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 
         this.window.setKeyCallback(this::keyCallback);
@@ -66,11 +64,10 @@ public final class YodiGame {
 
         this.window.centerOnScreen();
         this.window.makeContextCurrent();
-        glfwSwapInterval(1); // vsync
         this.window.show();
 
+        glfwSwapInterval(0); // vsync
         GL.createCapabilities();
-
         glBindVertexArray(glGenVertexArrays());
 
         this.resizeCallback(this.window.getWindowId(), DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -82,13 +79,21 @@ public final class YodiGame {
         glUniform1i(RenderUtil.POSITION_TEXTURE.getUniformLocation("textureSampler"), 0);
     }
 
+    @Override
+    public void close() {
+        Tesselator2D.INSTANCE.delete();
+        this.spriteSheet.delete();
+        this.window.delete();
+    }
+
     private void mainLoop() {
+        // A nice green, for the background
         glClearColor(158 / 255F, 203 / 255F, 145 / 255F, 1.0F);
 
         while (!this.window.shouldClose()) {
-            long frameStart = System.currentTimeMillis();
+            long frameStart = System.nanoTime();
 
-            if (((frameStart - this.lastUpdate) >= UPDATE_INTERVAL)) {
+            if (((frameStart - this.lastUpdate) >= (UPDATE_INTERVAL * 1.0e6))) {
                 if (this.currentScreen != null) {
                     this.currentScreen.update();
                 } else {
@@ -98,7 +103,6 @@ public final class YodiGame {
             }
 
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            glActiveTexture(GL_TEXTURE0);
             RenderState.resetTranslations();
 
             if (this.currentScreen == null || this.currentScreen.isTranslucent()) {
@@ -112,7 +116,7 @@ public final class YodiGame {
             glfwSwapBuffers(this.window.getWindowId());
             glfwPollEvents();
 
-            this.frameCounter.update(System.currentTimeMillis() - frameStart);
+            this.frameCounter.update(System.nanoTime() - frameStart);
         }
     }
 
@@ -129,6 +133,10 @@ public final class YodiGame {
     private void renderGame() {
         Tesselator2D tess = Tesselator2D.INSTANCE;
         glEnable(GL_TEXTURE_2D);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        /* Render the border */
         tess.begin(VertexFormat.POSITION_TEXTURE_2D);
 
         // Top and bottom border
@@ -143,27 +151,27 @@ public final class YodiGame {
             this.drawTile(tess, TILES_X - 1, y, Terrain.GRASS);
         }
 
-        // Set the color for the border and render the border
         RenderState.color(158, 203, 145, 255); // This is a nice green
         this.spriteSheet.getTexture().bind();
         tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
 
+        /* Render the apples and the Yodi */
         tess.begin(VertexFormat.POSITION_TEXTURE_2D);
 
         this.drawTiles(tess, this.world.getApples(), Terrain.BREAD);
         this.drawYoditax(tess, this.world.getSnake());
 
-        // Set the color back to normal
         RenderState.color(1.0F, 1.0F, 1.0F, 1.0F);
         tess.draw(GL_TRIANGLES, RenderUtil.POSITION_TEXTURE);
 
-        this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT - 2);
-        this.fontRenderer.drawString("Score: " + this.world.getScore(), 2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT * 2 - 2);
-    }
+        /* Render the score and FPS */
+        RenderState.pushMatrix();
+        // RenderState.translate(2, SCALED_HEIGHT - FontRenderer.SCALED_FONT_HEIGHT - 2, 0);
+        RenderState.scale(2, 2, 1);
 
-    public void resetGame() {
-        this.world.reset();
-        this.currentScreen = null;
+        this.fontRenderer.drawString("FPS: " + this.frameCounter.getAverageFPS(), 2, 0);
+        this.fontRenderer.drawString("Score: " + this.world.getScore(), 2, FontRenderer.SCALED_FONT_HEIGHT);
+        RenderState.popMatrix();
     }
 
     private void drawYoditax(Tesselator2D tess, Snake yodi) {
@@ -177,8 +185,8 @@ public final class YodiGame {
         int textureSubtrahend = (this.updateCount % 2 == 0) ? 0 : 64;
 
         int headTexture = switch (facing) {
-            case UP -> Terrain.YODI_HEAD_D;
-            case DOWN -> Terrain.YODI_HEAD_U;
+            case UP -> Terrain.YODI_HEAD_U;
+            case DOWN -> Terrain.YODI_HEAD_D;
             case LEFT -> Terrain.YODI_HEAD_R;
             case RIGHT -> Terrain.YODI_HEAD_L;
         };
@@ -190,10 +198,6 @@ public final class YodiGame {
             Vec2 nextSegment = segments.get(i + 1);
 
             Snake.Direction nextFacing = Mth.adjacency(segment, nextSegment);
-
-            if (nextFacing == null) {
-                continue;
-            }
 
             int texture = this.computeTexture(facing, nextFacing);
 
@@ -212,11 +216,13 @@ public final class YodiGame {
 
         // Deal with the tail
         int tailTexture = switch (facing) {
-            case UP -> Terrain.YODI_TAIL_D;
-            case DOWN -> Terrain.YODI_TAIL_U;
+            case UP -> Terrain.YODI_TAIL_U;
+            case DOWN -> Terrain.YODI_TAIL_D;
             case LEFT -> Terrain.YODI_TAIL_R;
             case RIGHT -> Terrain.YODI_TAIL_L;
         };
+
+        // this.drawTile(tess, 0, 0, Terrain.TNT);
 
         this.drawTile(tess, segments.get(count - 1).x(), segments.get(count - 1).y(), tailTexture - textureSubtrahend);
     }
@@ -228,33 +234,33 @@ public final class YodiGame {
             if (outgoing == Snake.Direction.UP) {
                 return Terrain.YODI_MIDDLE_U;
             } else if (outgoing == Snake.Direction.RIGHT) {
-                return Terrain.YODI_ANGLE_DR;
+                return Terrain.YODI_ANGLE_UR;
             } else if (outgoing == Snake.Direction.LEFT) {
-                return Terrain.YODI_ANGLE_DL;
+                return Terrain.YODI_ANGLE_UL;
             }
         } else if (incoming == Snake.Direction.DOWN) {
             if (outgoing == Snake.Direction.DOWN) {
                 return Terrain.YODI_MIDDLE_U;
             } else if (outgoing == Snake.Direction.RIGHT) {
-                return Terrain.YODI_ANGLE_UR;
+                return Terrain.YODI_ANGLE_DR;
             } else if (outgoing == Snake.Direction.LEFT) {
-                return Terrain.YODI_ANGLE_UL;
+                return Terrain.YODI_ANGLE_DL;
             }
         } else if (incoming == Snake.Direction.RIGHT) {
             if (outgoing == Snake.Direction.LEFT) {
                 return Terrain.YODI_MIDDLE_R;
             } else if (outgoing == Snake.Direction.UP) {
-                return Terrain.YODI_ANGLE_UL;
-            } else if (outgoing == Snake.Direction.DOWN) {
                 return Terrain.YODI_ANGLE_DL;
+            } else if (outgoing == Snake.Direction.DOWN) {
+                return Terrain.YODI_ANGLE_UL;
             }
         } else if (incoming == Snake.Direction.LEFT) {
             if (outgoing == Snake.Direction.RIGHT) {
                 return Terrain.YODI_MIDDLE_R;
             } else if (outgoing == Snake.Direction.UP) {
-                return Terrain.YODI_ANGLE_UR;
-            } else if (outgoing == Snake.Direction.DOWN) {
                 return Terrain.YODI_ANGLE_DR;
+            } else if (outgoing == Snake.Direction.DOWN) {
+                return Terrain.YODI_ANGLE_UR;
             }
         }
 
@@ -274,13 +280,13 @@ public final class YodiGame {
         float sH = this.spriteSheet.getSpriteHeight();
 
         // Draw as two triangles
-        tess.vertex(x, y).texture(u / tW, (v + sH) / tH).next();
-        tess.vertex(x + TILE_SIZE, y).texture((u + sW) / tW, (v + sH) / tH).next();
-        tess.vertex(x, y + TILE_SIZE).texture(u / tW, v / tH).next();
+        tess.vertex(x, y).texture(u / tW, (v) / tH).next();
+        tess.vertex(x + TILE_SIZE, y).texture((u + sW) / tW, (v) / tH).next();
+        tess.vertex(x, y + TILE_SIZE).texture(u / tW, (v+ sH) / tH).next();
 
-        tess.vertex(x, y + TILE_SIZE).texture(u / tW, v / tH).next();
-        tess.vertex(x + TILE_SIZE, y).texture((u + sW) / tW, (v + sH) / tH).next();
-        tess.vertex(x + TILE_SIZE, y + TILE_SIZE).texture((u + sW) / tW, v / tH).next();
+        tess.vertex(x, y + TILE_SIZE).texture(u / tW, (v+ sH) / tH).next();
+        tess.vertex(x + TILE_SIZE, y).texture((u + sW) / tW, (v) / tH).next();
+        tess.vertex(x + TILE_SIZE, y + TILE_SIZE).texture((u + sW) / tW, (v+ sH) / tH).next();
     }
 
     private void drawTiles(Tesselator2D tess, Iterable<Vec2> tiles, int blockId) {
@@ -291,7 +297,7 @@ public final class YodiGame {
 
     private void resizeCallback(long window, int width, int height) {
         glViewport(0, 0, width, height);
-        RenderState.ortho(0, SCALED_WIDTH, 0, SCALED_HEIGHT, -1, 1);
+        RenderState.ortho(0, SCALED_WIDTH, SCALED_HEIGHT, 0, -1, 1);
         Screen.setWidth(SCALED_WIDTH);
         Screen.setHeight(SCALED_HEIGHT);
     }
@@ -326,12 +332,16 @@ public final class YodiGame {
         }
     }
 
+    public void resetGame() {
+        this.world.reset();
+        this.currentScreen = null;
+    }
+
     public void closeScreen() {
         this.currentScreen = null;
     }
 
     public static void main(String[] args) {
-        YodiGame yodiGame = new YodiGame();
         try {
             GLFWErrorCallback.createPrint(System.err).set();
 
@@ -339,8 +349,9 @@ public final class YodiGame {
                 throw new IllegalStateException("Failed to initialize GLFW");
             }
 
-            yodiGame.init();
-            yodiGame.mainLoop();
+            try (YodiGame yodiGame = new YodiGame()) {
+                yodiGame.mainLoop();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             alertError("Error!", e.getMessage());

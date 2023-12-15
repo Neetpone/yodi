@@ -49,6 +49,7 @@ public class Tesselator2D {
     public Tesselator2D vertex(float x, float y) {
         this.putFloat(x);
         this.putFloat(y);
+        this.putFloat(0); // Z
         this.elementIndex++;
         return this;
     }
@@ -71,8 +72,9 @@ public class Tesselator2D {
      * Finish the current vertex. This validates that all elements of the vertex have been filled.
      */
     public void next() {
+        this.ensureBeginned();
         if (this.elementIndex != this.vertexFormat.elements.length) {
-            throw new IllegalStateException("not filled all elements of the vertex (expected " + this.vertexFormat.elements.length + ", got " + this.elementIndex + ")");
+            throw new IllegalStateException("Not filled all elements of the vertex (expected " + this.vertexFormat.elements.length + ", got " + this.elementIndex + ")");
         }
 
         this.vertexCount++;
@@ -90,12 +92,7 @@ public class Tesselator2D {
         buffer.upload(vertexFormat, vertices.buffer());
         vertexFormat.setupState();
 
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
         glDrawArrays(mode, 0, vertices.vertexCount());
-
-        glDisable(GL_BLEND);
 
         vertexFormat.clearState();
     }

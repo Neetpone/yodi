@@ -42,7 +42,7 @@ public enum VertexFormat {
     }
 
     public enum Element {
-        POSITION(2),
+        POSITION(3),
         TEXTURE(2);
 
         private final int size;

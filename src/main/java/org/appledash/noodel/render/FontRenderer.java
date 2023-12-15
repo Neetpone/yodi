@@ -93,10 +93,10 @@ public class FontRenderer {
             float u = col * uPerCharacter;
             float v = row * vPerCharacter;
 
-            tess.vertex(x, y).texture(u, v + vPerCharacter).next();
-            tess.vertex(x + this.charWidth / scale, y).texture(u + uPerCharacter, v + vPerCharacter).next();
-            tess.vertex(x + this.charWidth / scale, y + this.charHeight / scale).texture(u + uPerCharacter, v).next();
-            tess.vertex(x, y + this.charHeight / scale).texture(u, v).next();
+            tess.vertex(x, y).texture(u, v).next();
+            tess.vertex(x + this.charWidth / scale, y).texture(u + uPerCharacter, v).next();
+            tess.vertex(x + this.charWidth / scale, y + this.charHeight / scale).texture(u + uPerCharacter, v + vPerCharacter).next();
+            tess.vertex(x, y + this.charHeight / scale).texture(u, v + vPerCharacter).next();
 
             x += this.charWidths[c - ' '] / scale;
         }

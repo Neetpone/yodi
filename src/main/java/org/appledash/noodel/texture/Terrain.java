@@ -4,6 +4,7 @@ public final class Terrain {
     public static final int OBSIDIAN = 1;
     public static final int GRASS = 40;
     public static final int RED_WOOL = 129;
+    public static final int TNT = 8;
 
     public static final int YODI_TAIL_R = 168;
     public static final int YODI_MIDDLE_R = 169;

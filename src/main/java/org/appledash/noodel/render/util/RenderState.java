@@ -49,10 +49,11 @@ public class RenderState {
 
     public static void pushMatrix() {
         modelViewMatrixStack.pushMatrix();
+        modelViewMatrixStack.identity();
     }
 
     public static void resetTranslations() {
-        modelViewMatrixStack.identity();
+        modelViewMatrixStack.clear();
     }
 
     public static void translate(float x, float y, float z) {
@@ -69,5 +70,9 @@ public class RenderState {
 
     public static FloatBuffer getModelViewMatrix() {
         return modelViewMatrixStack.get(MODEL_VIEW_MATRIX_BUFFER);
+    }
+
+    public static Matrix4f getModelViewMatrix4f() {
+        return modelViewMatrixStack;
     }
 }

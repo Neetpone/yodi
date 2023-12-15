@@ -1,6 +1,7 @@
 package org.appledash.noodel.util;
 
 import org.appledash.noodel.Snake;
+import org.jetbrains.annotations.NotNull;
 
 public final class Mth {
     private Mth() {
@@ -11,7 +12,7 @@ public final class Mth {
     }
 
     // Yeah, this is in here, because I'm too lazy to make a new class for it.
-    public static Snake.Direction adjacency(Vec2 a, Vec2 b) {
+    public static @NotNull Snake.Direction adjacency(Vec2 a, Vec2 b) {
         if (a.x() == b.x()) {
             if (b.y() > a.y()) {
                 return Snake.Direction.UP;
@@ -26,6 +27,6 @@ public final class Mth {
             }
         }
 
-        return null;
+        throw new IllegalArgumentException("Vectors are not adjacent");
     }
 }

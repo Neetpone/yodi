@@ -1,11 +1,13 @@
 package org.appledash.noodel;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.appledash.noodel.util.Vec2;
 
 import java.util.ArrayDeque;
 
 public class Snake {
+    @Setter
     public Direction direction = Direction.RIGHT;
     public Direction prevDirection = this.direction;
 
@@ -34,10 +36,6 @@ public class Snake {
         return this.getHeadPos().equals(pos);
     }
 
-    public void setDirection(Direction direction) {
-        this.direction = direction;
-    }
-
     public Vec2 getHeadPos() {
         return this.path.getFirst();
     }
@@ -47,8 +45,8 @@ public class Snake {
     }
 
     public enum Direction {
-        UP(new Vec2(0, 1)),
-        DOWN(new Vec2(0, -1)),
+        UP(new Vec2(0, -1)),
+        DOWN(new Vec2(0, 1)),
         LEFT(new Vec2(-1, 0)),
         RIGHT(new Vec2(1, 0));
 
